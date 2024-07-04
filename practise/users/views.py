@@ -2,7 +2,7 @@ from rest_framework import generics,permissions
 from rest_framework.response import Response
 from knox.models import AuthToken  
 from django.contrib.auth import login
-from .serializer import UserSerializer,LoginSerializer
+from .serializer import UserSerializer,LoginSerializer,UpdateSerializer
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -55,7 +55,7 @@ class LoginView(APIView):
     
     
 class UserUpdateView(APIView):
-    serializer_class = UserSerializer
+    serializer_class = UpdateSerializer
     
     def get_object(self):
         return self.request.user
@@ -65,14 +65,10 @@ class UserUpdateView(APIView):
             instance = self.get_object()
             serializer = self.serializer_class(instance, data=request.data, partial=True)
             user=serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-            return Response({
-                "user":user
-            }, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except NotFound as e:
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-    def perform_update(self, serializer):
-        serializer.save()
 
 class MeInfoView(APIView):
     serializer_class = UserSerializer

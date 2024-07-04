@@ -52,3 +52,23 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Incorrect username or password")
 
         return user
+    
+
+class UpdateSerializer(serializers.ModelSerializer):
+    
+    username = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username is already in use.")
+        return value
