@@ -9,11 +9,13 @@ from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ObjectDoesNotExist
+
+
 class RegisterView(APIView): # APIView
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny] 
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -35,6 +37,29 @@ class RegisterView(APIView): # APIView
             raise e
         
 
+class UserDetailListView(APIView):
+
+    serializer_class = UpdateSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def get(self, request):
+        user = self.get_object()
+        serializer = self.serializer_class(user)
+        return Response(serializer.data)
+
+    def put(self, request):
+        try:
+            instance = self.get_object()
+            serializer = self.serializer_class(instance, data=request.data, partial=True)
+            user=serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except NotFound as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -53,37 +78,12 @@ class LoginView(APIView):
             "token": token
         })
     
-    
-class UserUpdateView(APIView):
-    serializer_class = UpdateSerializer
-    
-    def get_object(self):
-        return self.request.user
-    
-    def put(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-            serializer = self.serializer_class(instance, data=request.data, partial=True)
-            user=serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except NotFound as e:
-            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-
-class MeInfoView(APIView):
-    serializer_class = UserSerializer
-
-    def get_object(self):
-        return self.request.user
-        
-    def get(self, request, *args, **kwargs):
-        user = self.get_object()
-        serializer = self.serializer_class(user)
-        return Response(serializer.data)
 
 
 class UserLogoutView(APIView):
 
     def post(self, request, format=None):
         AuthToken.objects.filter(user=request.user).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            "message":"User Logout Success"
+        },status=status.HTTP_204_NO_CONTENT)

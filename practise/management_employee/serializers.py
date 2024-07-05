@@ -1,9 +1,13 @@
 from rest_framework import serializers
 from .models import Employee
 import datetime
+from django.core.validators import FileExtensionValidator
+from rest_framework.exceptions import ValidationError
 
 
-class CreatEmployeeSerializer(serializers.ModelSerializer):
+class EmployeesListSerializer(serializers.ModelSerializer):
+
+    profile_picture = serializers.ImageField(validators=[FileExtensionValidator(['jpg', 'jpeg', 'png'])])
 
     class Meta:
         model = Employee
@@ -16,11 +20,6 @@ class CreatEmployeeSerializer(serializers.ModelSerializer):
     
     def validate_fullname(self, value):
         # Example: Ensure the fullname has a minimum length
-        if len(value) < 3:
-            raise serializers.ValidationError("Full name must be at least 3 characters long.")
-        return value
-    
-    def validate_fullname(self, value):
         if len(value) < 3:
             raise serializers.ValidationError("Full name must be at least 3 characters long.")
         return value
@@ -50,11 +49,11 @@ class CreatEmployeeSerializer(serializers.ModelSerializer):
             representation['gender'] = 'Other'
         return representation
     
-class FilterEmployeeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Employee
-        fields=['id','fullname','date_of_birth','gender','profile_picture']
+    def validate_profile_picture(self, value):
+        file_extension = value.name.split('.')[-1].lower()
+        if file_extension not in ['jpg', 'jpeg', 'png']:
+            raise ValidationError("Invalid file format. Please upload JPG, JPEG, or PNG files.")
+        return value
 
 
 
